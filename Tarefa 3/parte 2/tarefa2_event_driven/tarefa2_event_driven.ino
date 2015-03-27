@@ -12,10 +12,6 @@ int timersRunning[maxTimers];
 int nextTimer = 0;
 int last_time = 0;
 
-void button_changed(int pin, int value);
-void timer_expired(void);
-void init();
-
 void button_listen(int pin)
 {
   if (nextButton < maxButtons)
