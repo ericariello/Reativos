@@ -163,9 +163,6 @@ void teste_speed_down()
 
 void timer_expired (int timerId)
 {
-  Serial.print("timer: ");
-  Serial.print(timerId);
-  Serial.print("\n");
   if (timerId == 0)
   {
     led_timer_state = !led_timer_state;
@@ -200,6 +197,5 @@ void init_event_driven ()
   timerid1 = timer_set(500);
   timerid2 = timer_set(200);
   deactivate_timer(timerid2);
-  Serial.begin(9600);
 }
 
