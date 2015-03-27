@@ -37,28 +37,25 @@ static void teste_stop()
 static void teste_speed_up()
 {
   led_time/=2;
-  change_timer(0, led_time);
+  change_timer(timerid1, led_time);
 }
 
 static void teste_speed_down()
 {
   led_time*=2;
-  change_timer(0, led_time);
+  change_timer(timerid1, led_time);
 }
 
 void timer_expired (int timerId)
 {
-  Serial.print("timer: ");
-  Serial.print(timerId);
-  Serial.print("\n");
-  if (timerId == 0)
+  if (timerId == timerid1)
   {
     led_timer_state = !led_timer_state;
     digitalWrite(LED_PIN, led_timer_state);
   }
-  else /*if (timerId==1)*/
+  else /*if (timerId==timerid2)*/
   {
-    deactivate_timer(1);
+    deactivate_timer(timerid2);
     if (teste_button_is_pressed[0]+teste_button_is_pressed[1]==2)
     {
       teste_stop();
@@ -85,6 +82,5 @@ void init_event_driven ()
   timerid1 = timer_set(500);
   timerid2 = timer_set(200);
   deactivate_timer(timerid2);
-  Serial.begin(9600);
 }
 
