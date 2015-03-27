@@ -1,17 +1,18 @@
 /* event_driven.c */
-#define maxTimers 2
-#define maxButtons 2
+#define maxTimers 2 /* numero maximo de timers */
+#define maxButtons 2 /* numero maximo de botoes */
 
-int button_is_pressed[maxButtons];
-int button_pins[maxButtons];
-int nextButton = 0;
+int button_is_pressed[maxButtons]; /* indica se o botao esta pressionado */
+int button_pins[maxButtons]; /* pinos aos quais estao conectados os botoes */
+int nextButton = 0; /* proximo botao */
 
-int timer_is_active[maxTimers];
-int timers[maxTimers];
-int timersRunning[maxTimers];
-int nextTimer = 0;
-int last_time = 0;
+int timer_is_active[maxTimers]; /* indica se o timer esta ativo */
+int timers[maxTimers]; /* tempo de timeout do timer */
+int timersRunning[maxTimers]; /* tempo de execucao do timer */
+int nextTimer = 0; /* proximo timer */
+int last_time = 0; /* ultimo tempo capturado */
 
+/* registra listener para um botao se houver espaco no buffer */
 void button_listen(int pin)
 {
   if (nextButton < maxButtons)
@@ -21,6 +22,7 @@ void button_listen(int pin)
   }
 }
 
+/* registra listener para timer se houver espaco no buffer */
 int timer_set(int ms)
 {
   if (nextTimer < maxTimers) 
@@ -34,6 +36,7 @@ int timer_set(int ms)
   return -1;
 }
 
+/* ativa timer */
 void activate_timer(int timerId)
 {
   if (timerId<nextTimer)
@@ -43,6 +46,7 @@ void activate_timer(int timerId)
   }
 }
 
+/* desativa timer */
 void deactivate_timer(int timerId)
 {
   if (timerId<nextTimer)
@@ -51,6 +55,7 @@ void deactivate_timer(int timerId)
   }
 }
 
+/* muda tempo de timeout do timer */
 void change_timer(int timerId, int time)
 {
   if (timerId<nextTimer)
@@ -59,11 +64,13 @@ void change_timer(int timerId, int time)
   }
 }
 
+/* inicializaçao */
 void setup (void)
 {
   init_event_driven();
 }
 
+/* verifica mudanca de tempo dos botoes */
 void checkButtonEvents()
 {
   int n;
@@ -78,6 +85,7 @@ void checkButtonEvents()
   }
 }
 
+/* verifica estouro dos timers ativos */
 void checkTimerEvents ()
 {
   int current_time = millis();
@@ -98,6 +106,7 @@ void checkTimerEvents ()
   last_time = current_time;
 }
 
+/* loop de execuçao */
 void loop (void)
 {
    checkButtonEvents();

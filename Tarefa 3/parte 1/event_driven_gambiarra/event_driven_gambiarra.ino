@@ -1,15 +1,16 @@
 /* event_driven.c */
-#define maxTimers 2
-#define maxButtons 2
+#define maxTimers 2 /* numero maximo de timers */
+#define maxButtons 2 /* numero maximo de botoes */
 
-int button_is_pressed[maxButtons];
-int button_pins[maxButtons];
-int nextButton = 0;
-int timers[maxTimers];
-int timersRunning[maxTimers];
-int nextTimer = 0;
-int last_time = 0;
+int button_is_pressed[maxButtons]; /* indica se os botoes estao pressionados */
+int button_pins[maxButtons]; /* pinos nos quais se encontram os botoes */
+int nextButton = 0; /* indice do proximo botao */
+int timers[maxTimers]; /* tempo de timeout dos timers */
+int timersRunning[maxTimers]; /* tempo de execucao do timer */
+int nextTimer = 0; /* indice do proximo timer */
+int last_time = 0; /* ultimo tempo capturado */
 
+/* registra o listener de um botao se ainda houver espaço no buffer */
 void button_listen(int pin)
 {
   if (nextButton < maxButtons)
@@ -19,6 +20,7 @@ void button_listen(int pin)
   }
 }
 
+/* registra listener de timer se ainda houve espaço no buffer */
 int timer_set(int ms)
 {
   if (nextTimer < maxTimers) 
@@ -31,11 +33,13 @@ int timer_set(int ms)
   return -1;
 }
 
+/* inicializaçao */
 void setup (void)
 {
   init_event_driven();
 }
 
+/* checa se algum dos botoes mudou de estado */
 void checkButtonEvents()
 {
   int n;
@@ -50,6 +54,7 @@ void checkButtonEvents()
   }
 }
 
+/* checa se algum dos timers estourou */
 void checkTimerEvents ()
 {
   int current_time = millis();
@@ -67,6 +72,7 @@ void checkTimerEvents ()
   last_time = current_time;
 }
 
+/* loop de execuçao */
 void loop (void)
 {
    checkButtonEvents();
