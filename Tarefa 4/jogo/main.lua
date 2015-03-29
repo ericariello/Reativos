@@ -2,7 +2,7 @@ tetris = {}
 map = {}
 graphics = { tileSize = 20, }
 pieces = {
-	{ color = "cian" , map = {{1, 1, 1, 1}} },
+	{ color = "purple" , map = {{1, 1, 1, 1}} },
 	{ color = "yellow", map = {{1, 1}, {1, 1}} },
 	{ color = "red", map = {{1, 0}, {1, 1}, {0, 1}}},
 	{ color = "green", map = {{0, 1}, {1, 1}, {1, 0}}},
@@ -95,32 +95,13 @@ tetris.checkLines = function ()
 		line = line - 1
 	end
 end
-graphics.drawSquare = function (color, x, y, w, h)
-	local mode = 'fill'
-	if color == "green" then
-		love.graphics.setColor(0, 255, 0);
-	elseif color == "pink" then
-		love.graphics.setColor(204, 0, 204);
-	elseif color == "yellow" then
-		love.graphics.setColor(255, 255, 0);
-	elseif color == "blue" then
-		love.graphics.setColor(0, 0, 255);
-	elseif color == "orange" then
-		love.graphics.setColor(255, 153, 51);
-	elseif color == "cian" then
-		love.graphics.setColor(0, 255, 255);
-	elseif color == "red" then
-		love.graphics.setColor(255, 0, 0);
-	elseif color == "empty" then
-		love.graphics.setColor(150, 150, 150);
-		mode = 'line'
-	end
-	love.graphics.rectangle(mode, x, y, w, h)
+graphics.drawSquare = function (color, x, y)
+	love.graphics.draw(graphics.blocksImages[color], x, y)
 end
 graphics.drawMap = function ()
 	for i = 1, #map do
 		for j = 1, #(map[1]) do
-			graphics.drawSquare(map[i][j], i*graphics.tileSize, j*graphics.tileSize, graphics.tileSize, graphics.tileSize)
+			graphics.drawSquare(map[i][j], i*graphics.tileSize, j*graphics.tileSize)
 		end
 	end
 end
@@ -128,12 +109,24 @@ graphics.drawFallingPiece = function ()
 	for i = 1, #pieces[currentPiece].map do
 		for j = 1, #pieces[currentPiece].map[1] do
 			if pieces[currentPiece].map[i][j] == 1 and position.y+j-1>0 then
-				graphics.drawSquare(pieces[currentPiece].color, (position.x+i-1)*graphics.tileSize, (position.y+j-1)*graphics.tileSize, graphics.tileSize, graphics.tileSize)
+				graphics.drawSquare(pieces[currentPiece].color, (position.x+i-1)*graphics.tileSize, (position.y+j-1)*graphics.tileSize)
 			end
 		end
 	end
 end
+graphics.loadImages = function ()
+	graphics.blocksImages = {}
+	graphics.blocksImages.green = love.graphics.newImage("imagens//green.png")
+	graphics.blocksImages.pink = love.graphics.newImage("imagens//pink.png")
+	graphics.blocksImages.yellow = love.graphics.newImage("imagens//yellow.png")
+	graphics.blocksImages.blue = love.graphics.newImage("imagens//blue.png")
+	graphics.blocksImages.orange = love.graphics.newImage("imagens//orange.png")
+	graphics.blocksImages.purple = love.graphics.newImage("imagens//purple.png")
+	graphics.blocksImages.red = love.graphics.newImage("imagens//red.png")
+	graphics.blocksImages.empty = love.graphics.newImage("imagens//empty.png")
+end
 function love.load ()
+	graphics.loadImages()
 	math.randomseed(os.time())
 	tetris.start()
 	love.window.setTitle("Tetris by Erica Riello")
