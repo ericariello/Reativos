@@ -124,13 +124,14 @@ graphics.loadImages = function ()
 	graphics.blocksImages.purple = love.graphics.newImage("imagens//purple.png")
 	graphics.blocksImages.red = love.graphics.newImage("imagens//red.png")
 	graphics.blocksImages.empty = love.graphics.newImage("imagens//empty.png")
+	graphics.title = love.graphics.newImage("imagens//title.png")
 end
 function love.load ()
 	graphics.loadImages()
 	math.randomseed(os.time())
 	tetris.start()
 	love.window.setTitle("Tetris by Erica Riello")
-	love.window.setMode(2*#map*graphics.tileSize, (#map[1]+2)*graphics.tileSize)
+	love.window.setMode((2*#map+3)*graphics.tileSize, (#map[1]+2)*graphics.tileSize)
 end
 function love.draw()
     graphics.drawMap()
@@ -138,11 +139,12 @@ function love.draw()
     	graphics.drawFallingPiece()
     end
     love.graphics.setColor(255, 255, 255);
-    love.graphics.print("Score: "..score, 300, 2*graphics.tileSize)
+    love.graphics.print("Score: "..score, 300, 10*graphics.tileSize)
     if lost then
-    	love.graphics.print("You lost!", 300, graphics.tileSize)
-    	love.graphics.print("Press R to restart!", 300, 3*graphics.tileSize)
+    	love.graphics.print("You lost!", 300, 11*graphics.tileSize)
+    	love.graphics.print("Press R to restart!", 300, 12*graphics.tileSize)
     end
+    love.graphics.draw(graphics.title, (#map+2)*graphics.tileSize, graphics.tileSize)
 end
 function love.update (dt)
 	if not lost then
