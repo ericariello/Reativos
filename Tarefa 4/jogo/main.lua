@@ -10,6 +10,17 @@ pieces = {
 	{ color = "orange", map = {{1, 1}, {1, 0}, {1, 0}}},
 	{ color = "blue", map = {{1, 1}, {0, 1}, {0, 1}}},
 }
+tetris.createNewPiece = function ()
+	timeCounter = 0.25
+	currentPiece = math.random(#pieces)
+	position = {x = math.floor((#map-#pieces[currentPiece].map)/2)+1, y = -(#pieces[currentPiece].map[1])+2}
+	fallingPiece = true
+end
+tetris.start = function ()
+	tetris.createMap(23, 12)
+	score = 0
+	tetris.createNewPiece()
+end
 tetris.createMap = function (lines, columns)
 	local invisibleLines = 0
 	for k = 1, #pieces do
@@ -123,15 +134,10 @@ graphics.drawFallingPiece = function ()
 	end
 end
 function love.load ()
-	tetris.createMap(23, 12)
+	math.randomseed(os.time())
+	tetris.start()
 	love.window.setTitle("Tetris by Erica Riello")
 	love.window.setMode(2*#map*graphics.tileSize, (#map[1]+2)*graphics.tileSize)
-	score = 0
-	timeCounter = 1
-	currentPiece = math.random(#pieces)
-	position = {x = math.floor((#map-#pieces[currentPiece].map)/2)+1, y = -(#pieces[currentPiece].map[1])+2}
-	fallingPiece = true
-	--map[7][1] = "pink"
 end
 function love.draw()
     graphics.drawMap()
@@ -142,18 +148,16 @@ function love.draw()
     love.graphics.print("Score: "..score, 300, 2*graphics.tileSize)
     if lost then
     	love.graphics.print("You lost!", 300, graphics.tileSize)
+    	love.graphics.print("Press R to restart!", 300, 3*graphics.tileSize)
     end
 end
 function love.update (dt)
 	if not lost then
 	timeCounter = timeCounter - dt
 		if not fallingPiece and timeCounter < 0 then
-			timeCounter = 1
-			currentPiece = math.random(#pieces)
-			position = {x = math.floor((#map-#pieces[currentPiece].map)/2)+1, y = -(#pieces[currentPiece].map[1])+2}
-			fallingPiece = true
+			tetris.createNewPiece()
 		elseif fallingPiece  and timeCounter < 0 then
-			timeCounter = 1
+			timeCounter = 0.25
 			if tetris.positionIsAvailable(0, 1, pieces[currentPiece].map) then
 				position.y = position.y + 1
 			else
@@ -179,5 +183,7 @@ function love.keypressed (key, isrepeat)
 		if tetris.positionIsAvailable(0, 0, newMap) then
 			pieces[currentPiece].map = newMap
 		end
+	elseif key == "r" then
+		tetris.start()
 	end
 end
