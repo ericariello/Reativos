@@ -13,11 +13,11 @@ pieces = {
 tetris.createNewPiece = function ()
 	timeCounter = 0.25
 	currentPiece = math.random(#pieces)
-	position = {x = math.floor((#map-#pieces[currentPiece].map)/2)+1, y = -(#pieces[currentPiece].map[1])+2}
-	fallingPiece = true
 	for i = 1, math.random(4)-1 do
 		pieces[currentPiece].map = tetris.rotatePiece(currentPiece)
 	end
+	position = {x = math.floor((#map-#pieces[currentPiece].map)/2)+1, y = -(#pieces[currentPiece].map[1])+2}
+	fallingPiece = true
 end
 tetris.start = function ()
 	tetris.createMap(map, 23, 12)
