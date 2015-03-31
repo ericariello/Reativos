@@ -27,14 +27,11 @@ tetris.createNewPiece = function ()
 		piece.map = tetris.rotatePiece(piece)
 	end
 	piece.position = {x = math.floor((#map-#piece.map)/2)+1, y = -(#piece.map[1])+2}
-	fallingPiece = true
 	return piece
 end
 tetris.start = function ()
-	lost = false
+	lost, score, level, holdPiece, fallingPiece = false, 0, 1, nil, true
 	tetris.createMap(map, 23, 12)
-	score = 0
-	level = 1
 	currentPiece = tetris.createNewPiece()
 	nextPiece = tetris.createNewPiece()
 end
@@ -159,6 +156,9 @@ function love.draw()
     	graphics.drawPiece(currentPiece, currentPiece.position.x*graphics.tileSize, currentPiece.position.y*graphics.tileSize)
     end
     graphics.drawPiece(nextPiece, 300, 13*graphics.tileSize)
+    if holdPiece then
+    	graphics.drawPiece(holdPiece, 300, 18*graphics.tileSize)
+    end
     love.graphics.print("Level: "..level, 300, 9*graphics.tileSize)
     love.graphics.print("Score: "..score, 300, 10*graphics.tileSize)
     if lost then
@@ -171,8 +171,7 @@ function love.update (dt)
 	if not lost then
 		timeCounter = timeCounter - dt
 		if not fallingPiece and timeCounter < 0 then
-			currentPiece = nextPiece
-			nextPiece = tetris.createNewPiece()
+			currentPiece, nextPiece, fallingPiece = nextPiece, tetris.createNewPiece(), true
 		elseif fallingPiece  and timeCounter < 0 then
 			timeCounter = 0.25
 			if tetris.positionIsAvailable(map, currentPiece.position.x, currentPiece.position.y, 0, 1, currentPiece.map) then
@@ -200,6 +199,13 @@ function love.keypressed (key, isrepeat)
 		if tetris.positionIsAvailable(map, currentPiece.position.x, currentPiece.position.y, 0, 0, newMap) then
 			currentPiece.map = newMap
 		end
+	elseif key == "h" then
+		if not holdPiece then
+			holdPiece, currentPiece, nextPiece = currentPiece, nextPiece, tetris.createNewPiece()
+		else
+			holdPiece, currentPiece = currentPiece, holdPiece
+		end
+		holdPiece.position = {x = math.floor((#map-#holdPiece.map)/2)+1, y = -(#holdPiece.map[1])+2}
 	elseif key == "r" then
 		tetris.start()
 	end
