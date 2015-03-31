@@ -23,6 +23,7 @@ tetris.start = function ()
 	lost = false
 	tetris.createMap(map, 23, 12)
 	score = 0
+	level = 1
 	tetris.createNewPiece()
 end
 tetris.createMap = function (mapToCreate, lines, columns)
@@ -82,6 +83,9 @@ tetris.checkLines = function (mapToCheck, line1, line2)
 		end
 		if clean then
 			score = score + 1
+			if score%10 == 0 then
+				level = level + 1
+			end
 			for col = 1, #mapToCheck do
 				table.remove(mapToCheck[col], line)
 				table.insert(mapToCheck[col], 1, "empty")
@@ -143,6 +147,7 @@ function love.draw()
     	graphics.drawFallingPiece(currentPiece, position.x, position.y)
     end
     love.graphics.setColor(255, 255, 255);
+    love.graphics.print("Level: "..level, 300, 9*graphics.tileSize)
     love.graphics.print("Score: "..score, 300, 10*graphics.tileSize)
     if lost then
     	love.graphics.print("You lost!", 300, 11*graphics.tileSize)
