@@ -20,6 +20,7 @@ tetris.createNewPiece = function ()
 	fallingPiece = true
 end
 tetris.start = function ()
+	lost = false
 	tetris.createMap(map, 23, 12)
 	score = 0
 	tetris.createNewPiece()
@@ -108,11 +109,11 @@ graphics.drawMap = function ()
 		end
 	end
 end
-graphics.drawFallingPiece = function ()
-	for i = 1, #pieces[currentPiece].map do
-		for j = 1, #pieces[currentPiece].map[1] do
-			if pieces[currentPiece].map[i][j] == 1 and position.y+j-1>0 then
-				graphics.drawSquare(pieces[currentPiece].color, (position.x+i-1)*graphics.tileSize, (position.y+j-1)*graphics.tileSize)
+graphics.drawFallingPiece = function (currentPieceId, x, y)
+	for i = 1, #pieces[currentPieceId].map do
+		for j = 1, #pieces[currentPieceId].map[1] do
+			if pieces[currentPieceId].map[i][j] == 1 and position.y+j-1>0 then
+				graphics.drawSquare(pieces[currentPieceId].color, (x+i-1)*graphics.tileSize, (y+j-1)*graphics.tileSize)
 			end
 		end
 	end
@@ -139,7 +140,7 @@ end
 function love.draw()
     graphics.drawMap()
     if fallingPiece then
-    	graphics.drawFallingPiece()
+    	graphics.drawFallingPiece(currentPiece, position.x, position.y)
     end
     love.graphics.setColor(255, 255, 255);
     love.graphics.print("Score: "..score, 300, 10*graphics.tileSize)
