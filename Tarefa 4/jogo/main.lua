@@ -15,13 +15,16 @@ tetris.createNewPiece = function ()
 	currentPiece = math.random(#pieces)
 	position = {x = math.floor((#map-#pieces[currentPiece].map)/2)+1, y = -(#pieces[currentPiece].map[1])+2}
 	fallingPiece = true
+	for i = 1, math.random(4)-1 do
+		pieces[currentPiece].map = tetris.rotatePiece(currentPiece)
+	end
 end
 tetris.start = function ()
-	tetris.createMap(23, 12)
+	tetris.createMap(map, 23, 12)
 	score = 0
 	tetris.createNewPiece()
 end
-tetris.createMap = function (lines, columns)
+tetris.createMap = function (mapToCreate, lines, columns)
 	local invisibleLines = 0
 	for k = 1, #pieces do
 		if #pieces[k].map > invisibleLines then
@@ -32,9 +35,9 @@ tetris.createMap = function (lines, columns)
 		end
 	end
 	for i = 1, columns do
-		map[i] = {}
+		mapToCreate[i] = {}
 		for j = -invisibleLines+2, lines do
-			map[i][j] = "empty"
+			mapToCreate[i][j] = "empty"
 		end
 	end
 end
@@ -48,45 +51,45 @@ tetris.rotatePiece = function (pieceNumber)
 	end
 	return newMap
 end
-tetris.placePiece = function (pieceNumber, x, y)
+tetris.placePiece = function (mapToPlace, pieceNumber, x, y)
 	for i = 1, #pieces[pieceNumber].map do
 		for j = 1, #pieces[pieceNumber].map[1] do
 			if pieces[pieceNumber].map[i][j] == 1 then
-				map[x+i-1][j+y-1] = pieces[pieceNumber].color
+				mapToPlace[x+i-1][j+y-1] = pieces[pieceNumber].color
 			end
 		end
 	end
 end
-tetris.positionIsAvailable = function (deltaX, deltaY, pieceMap)
+tetris.positionIsAvailable = function (mapToCheck, currentX, currentY, deltaX, deltaY, pieceMap)
 	for i = 1, #pieceMap do
 		for j = 1, #pieceMap[1] do
-			if pieceMap[i][j] == 1 and (not map[position.x+i+deltaX-1] or map[position.x+i+deltaX-1][position.y+j+deltaY-1] ~= "empty") then
+			if pieceMap[i][j] == 1 and (not mapToCheck[currentX+i+deltaX-1] or mapToCheck[currentX+i+deltaX-1][currentY+j+deltaY-1] ~= "empty") then
 				return false
 			end
 		end
 	end
 	return true
 end
-tetris.checkLines = function ()
+tetris.checkLines = function (mapToCheck)
 	for line = 1, #pieces[currentPiece].map[1] do
 		local clean = true
-		for col = 1, #map do
-			if map[col][position.y+line-1] == "empty" then
+		for col = 1, #mapToCheck do
+			if mapToCheck[col][position.y+line-1] == "empty" then
 				clean = false
 				break
 			end
 		end
 		if clean then
 			score = score + 1
-			for col = 1, #map do
-				table.remove(map[col], position.y+line-1)
-				table.insert(map[col], 1, "empty")
+			for col = 1, #mapToCheck do
+				table.remove(mapToCheck[col], position.y+line-1)
+				table.insert(mapToCheck[col], 1, "empty")
 			end
 		end
 	end
 	local line = 0
-	while (map[1][line]) do
-		for col = 1, #map do
+	while (mapToCheck[1][line]) do
+		for col = 1, #mapToCheck do
 			if map[col][line] ~= "empty" then
 				lost = true
 				return
@@ -153,12 +156,12 @@ function love.update (dt)
 			tetris.createNewPiece()
 		elseif fallingPiece  and timeCounter < 0 then
 			timeCounter = 0.25
-			if tetris.positionIsAvailable(0, 1, pieces[currentPiece].map) then
+			if tetris.positionIsAvailable(map, position.x, position.y, 0, 1, pieces[currentPiece].map) then
 				position.y = position.y + 1
 			else
 				fallingPiece = false 
-				tetris.placePiece(currentPiece, position.x, position.y)
-				tetris.checkLines()
+				tetris.placePiece(map, currentPiece, position.x, position.y)
+				tetris.checkLines(map)
 			end
 		end
 	end
@@ -167,15 +170,15 @@ function love.keypressed (key, isrepeat)
 	if isrepeat then
 		return
 	end
-	if key == "right" and tetris.positionIsAvailable(1, 0, pieces[currentPiece].map) then
+	if key == "right" and tetris.positionIsAvailable(map, position.x, position.y, 1, 0, pieces[currentPiece].map) then
 		position.x = position.x + 1
-	elseif key == "left" and tetris.positionIsAvailable(-1, 0, pieces[currentPiece].map) then
+	elseif key == "left" and tetris.positionIsAvailable(map, position.x, position.y, -1, 0, pieces[currentPiece].map) then
 		position.x = position.x - 1
-	elseif key == "down" and tetris.positionIsAvailable(0, 1, pieces[currentPiece].map) then
+	elseif key == "down" and tetris.positionIsAvailable(map, position.x, position.y, 0, 1, pieces[currentPiece].map) then
 		position.y = position.y + 1
 	elseif key == "up" then
 		local newMap = tetris.rotatePiece(currentPiece)
-		if tetris.positionIsAvailable(0, 0, newMap) then
+		if tetris.positionIsAvailable(map, position.x, position.y, 0, 0, newMap) then
 			pieces[currentPiece].map = newMap
 		end
 	elseif key == "r" then
