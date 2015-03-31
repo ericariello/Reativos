@@ -71,11 +71,11 @@ tetris.positionIsAvailable = function (mapToCheck, currentX, currentY, deltaX, d
 	end
 	return true
 end
-tetris.checkLines = function (mapToCheck)
-	for line = 1, #pieces[currentPiece].map[1] do
+tetris.checkLines = function (mapToCheck, line1, line2)
+	for line = line1, line2 do
 		local clean = true
 		for col = 1, #mapToCheck do
-			if mapToCheck[col][position.y+line-1] == "empty" then
+			if mapToCheck[col][line] == "empty" then
 				clean = false
 				break
 			end
@@ -83,7 +83,7 @@ tetris.checkLines = function (mapToCheck)
 		if clean then
 			score = score + 1
 			for col = 1, #mapToCheck do
-				table.remove(mapToCheck[col], position.y+line-1)
+				table.remove(mapToCheck[col], line)
 				table.insert(mapToCheck[col], 1, "empty")
 			end
 		end
@@ -162,7 +162,7 @@ function love.update (dt)
 			else
 				fallingPiece = false 
 				tetris.placePiece(map, currentPiece, position.x, position.y)
-				tetris.checkLines(map)
+				tetris.checkLines(map, position.y, position.y+#(pieces[currentPiece].map[1])-1)
 			end
 		end
 	end
