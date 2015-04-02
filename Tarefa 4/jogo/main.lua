@@ -9,6 +9,7 @@ pieces = { { color = "purple" , map = {{1, 1, 1, 1}} },
 	{ color = "orange", map = {{1, 1}, {1, 0}, {1, 0}}},
 	{ color = "blue", map = {{1, 1}, {0, 1}, {0, 1}}},
 }
+fallingMaxTime, currentFallTime = 0.25, 0.25
 tetris.copyPieceMap = function (pieceId)
 	local copy = {}
 	for i = 1, #pieces[pieceId].map do
@@ -20,10 +21,10 @@ tetris.copyPieceMap = function (pieceId)
 	return copy
 end
 tetris.createNewPiece = function ()
-	timeCounter = 0.25
+	timeCounter = fallingMaxTime
 	local pieceId = math.random(#pieces)
-	local piece = { color = pieces[pieceId].color, map=tetris.copyPieceMap(pieceId)}
-	for i = 1, math.random(4) do
+	local piece = { color = pieces[pieceId].color, map=tetris.copyPieceMap(pieceId), animationTime = 0, }
+	for i = 1, math.random(4)-1 do
 		piece.map = tetris.rotatePiece(piece)
 	end
 	piece.position = {x = math.floor((#map-#piece.map)/2)+1, y = -(#piece.map[1])+2}
@@ -153,12 +154,15 @@ end
 function love.draw()
     graphics.drawMap()
     if fallingPiece then
-    	graphics.drawPiece(currentPiece, currentPiece.position.x*graphics.tileSize, currentPiece.position.y*graphics.tileSize)
+    	graphics.drawPiece(currentPiece, currentPiece.position.x*graphics.tileSize, currentPiece.position.y*graphics.tileSize-graphics.tileSize*(1-currentPiece.animationTime/fallingMaxTime))
     end
     graphics.drawPiece(nextPiece, 300, 13*graphics.tileSize)
     if holdPiece then
     	graphics.drawPiece(holdPiece, 300, 18*graphics.tileSize)
     end
+    love.graphics.setColor(0, 0, 0)
+    love.graphics.rectangle('fill', graphics.tileSize, 0, #map*graphics.tileSize, graphics.tileSize)
+    love.graphics.setColor(255, 255, 255)
     love.graphics.print("Level: "..level, 300, 9*graphics.tileSize)
     love.graphics.print("Score: "..score, 300, 10*graphics.tileSize)
     if lost then
@@ -168,14 +172,16 @@ function love.draw()
     love.graphics.draw(graphics.title, (#map+2)*graphics.tileSize, graphics.tileSize)
 end
 function love.update (dt)
+	currentPiece.animationTime = currentPiece.animationTime + dt
 	if not lost then
 		timeCounter = timeCounter - dt
 		if not fallingPiece and timeCounter < 0 then
 			currentPiece, nextPiece, fallingPiece = nextPiece, tetris.createNewPiece(), true
+			currentFallTime = fallingMaxTime
 		elseif fallingPiece  and timeCounter < 0 then
-			timeCounter = 0.25
+			timeCounter = currentFallTime
 			if tetris.positionIsAvailable(map, currentPiece.position.x, currentPiece.position.y, 0, 1, currentPiece.map) then
-				currentPiece.position.y = currentPiece.position.y + 1
+				currentPiece.position.y, currentPiece.animationTime = currentPiece.position.y + 1, 0
 			else
 				fallingPiece = false 
 				tetris.placePiece(map, currentPiece, currentPiece.position.x, currentPiece.position.y)
@@ -193,7 +199,7 @@ function love.keypressed (key, isrepeat)
 	elseif key == "left" and tetris.positionIsAvailable(map, currentPiece.position.x, currentPiece.position.y, -1, 0, currentPiece.map) then
 		currentPiece.position.x = currentPiece.position.x - 1
 	elseif key == "down" and tetris.positionIsAvailable(map, currentPiece.position.x, currentPiece.position.y, 0, 1, currentPiece.map) then
-		currentPiece.position.y = currentPiece.position.y + 1
+		currentFallTime = (currentFallTime<=0.05 and 0.05) or currentFallTime - 0.05
 	elseif key == "up" then
 		local newMap = tetris.rotatePiece(currentPiece)
 		if tetris.positionIsAvailable(map, currentPiece.position.x, currentPiece.position.y, 0, 0, newMap) then
@@ -205,6 +211,7 @@ function love.keypressed (key, isrepeat)
 		else
 			holdPiece, currentPiece = currentPiece, holdPiece
 		end
+		holdPiece.animationTime = 0
 		holdPiece.position = {x = math.floor((#map-#holdPiece.map)/2)+1, y = -(#holdPiece.map[1])+2}
 	elseif key == "r" then
 		tetris.start()
