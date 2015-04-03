@@ -167,8 +167,7 @@ function love.draw()
     love.graphics.print(level, 300, 7.6*graphics.tileSize)
     love.graphics.print(score, 300, 10.5*graphics.tileSize)
     if lost then
-    	love.graphics.print("You lost!", 300, 11*graphics.tileSize)
-    	love.graphics.print("Press R to restart!", 300, 12*graphics.tileSize)
+    	love.graphics.print("You lost! Press R to restart!", 300, 5*graphics.tileSize)
     end
 end
 function love.update (dt)
