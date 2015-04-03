@@ -157,9 +157,9 @@ function love.draw()
     	graphics.drawPiece(currentPiece, currentPiece.position.x*graphics.tileSize, currentPiece.position.y*graphics.tileSize-graphics.tileSize*(1-currentPiece.animationTime/fallingMaxTime))
     end
     love.graphics.draw(graphics.title, (#map+2)*graphics.tileSize, graphics.tileSize)
-    graphics.drawPiece(nextPiece, 300, 13*graphics.tileSize)
+    graphics.drawPiece(nextPiece, 292+(217-#nextPiece.map*graphics.tileSize)/2, 257+(92-#nextPiece.map[1]*graphics.tileSize)/2)
     if holdPiece then
-    	graphics.drawPiece(holdPiece, 300, 19*graphics.tileSize)
+    	graphics.drawPiece(holdPiece, 292+(217-#holdPiece.map*graphics.tileSize)/2, 372+(92-#holdPiece.map[1]*graphics.tileSize)/2)
     end
     love.graphics.setColor(0, 0, 0)
     love.graphics.rectangle('fill', graphics.tileSize, 0, #map*graphics.tileSize, graphics.tileSize)
