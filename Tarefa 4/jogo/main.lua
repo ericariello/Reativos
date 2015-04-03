@@ -156,20 +156,20 @@ function love.draw()
     if fallingPiece then
     	graphics.drawPiece(currentPiece, currentPiece.position.x*graphics.tileSize, currentPiece.position.y*graphics.tileSize-graphics.tileSize*(1-currentPiece.animationTime/fallingMaxTime))
     end
+    love.graphics.draw(graphics.title, (#map+2)*graphics.tileSize, graphics.tileSize)
     graphics.drawPiece(nextPiece, 300, 13*graphics.tileSize)
     if holdPiece then
-    	graphics.drawPiece(holdPiece, 300, 18*graphics.tileSize)
+    	graphics.drawPiece(holdPiece, 300, 19*graphics.tileSize)
     end
     love.graphics.setColor(0, 0, 0)
     love.graphics.rectangle('fill', graphics.tileSize, 0, #map*graphics.tileSize, graphics.tileSize)
     love.graphics.setColor(255, 255, 255)
-    love.graphics.print("Level: "..level, 300, 9*graphics.tileSize)
-    love.graphics.print("Score: "..score, 300, 10*graphics.tileSize)
+    love.graphics.print(level, 300, 7.6*graphics.tileSize)
+    love.graphics.print(score, 300, 10.5*graphics.tileSize)
     if lost then
     	love.graphics.print("You lost!", 300, 11*graphics.tileSize)
     	love.graphics.print("Press R to restart!", 300, 12*graphics.tileSize)
     end
-    love.graphics.draw(graphics.title, (#map+2)*graphics.tileSize, graphics.tileSize)
 end
 function love.update (dt)
 	currentPiece.animationTime = currentPiece.animationTime + dt
