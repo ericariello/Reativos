@@ -9,6 +9,6 @@
 <br>Tarefa 4 - Jogo
 <br>  |- Animação: Exercício de animação e captura de mouse com SDL.
 <br>  |- Jogo: versão simplificada do Jogo Tetris
-<br>Tarefa 4 - Jogo (continuação)
+<br>Tarefa 5 - Jogo (continuação)
 <br>  |- Jogo: versão simplificada do Jogo Tetris com replay
 <br>  |- Máquina de estados
