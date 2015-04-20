@@ -207,8 +207,10 @@ function love.keypressed (key, isrepeat)
 	elseif key == "h" then
 		if not holdPiece then
 			holdPiece, currentPiece, nextPiece = currentPiece, nextPiece, tetris.createNewPiece()
-		else
+			holdPiece.wasHold = true
+		elseif not currentPiece.wasHold then
 			holdPiece, currentPiece = currentPiece, holdPiece
+			holdPiece.wasHold = true
 		end
 		holdPiece.animationTime = 0
 		holdPiece.position = {x = math.floor((#map-#holdPiece.map)/2)+1, y = -(#holdPiece.map[1])+2}
