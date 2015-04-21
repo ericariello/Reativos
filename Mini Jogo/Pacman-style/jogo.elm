@@ -54,22 +54,17 @@ main =
 getBlockColor : Int -> Color
 getBlockColor i =
   case i of
-    -1 -> clearRed
-    0 -> clearGrey
-    1 -> clearBlue
-    2 -> clearBlue
-    3 -> clearGrey
-    4 -> clearGrey
+    -1 -> grey
+    0 -> black
+    1 -> black
+    2 -> black
+    3 -> black
+    4 -> black
 
-
-clearGrey : Color
-clearGrey =
-  rgba 111 111 111 0.6
+black: Color
+black =
+  rgba 0 0 0 1
   
-clearRed : Color
-clearRed = 
-  rgba 255 0 0 0.3
- 
-clearBlue : Color
-clearBlue = 
-  rgba 0 0 255 0.6
+grey: Color
+grey =
+  rgba 55 55 55 1
