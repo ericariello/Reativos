@@ -39,13 +39,23 @@ getSquaresFromArray : List Int -> Float -> Float -> List Form
 getSquaresFromArray xs x y = 
   case xs of
     [] -> []
-    hd::tl -> (move (x, y) (filled (getBlockColor hd) (rect 20 20))) :: (getSquaresFromArray tl (x+20) y)
+    hd::tl -> (move (x, y) (filled (getBlockColor hd) (rect 20 20))) :: (getCircle hd x y) ++ (getSquaresFromArray tl (x+20) y)
 
 getSquaresFromMatrix : List (List Int) -> Float -> Float -> List Form
 getSquaresFromMatrix xs x y = 
   case xs of
     [] -> []
     hd::tl -> (getSquaresFromArray hd x y) ++ (getSquaresFromMatrix tl x (y-20))
+
+getCircle : Int -> Float -> Float -> List Form
+getCircle i x y =
+  case i of
+    -1 -> []
+    0 -> []
+    1 -> (move (x, y) (filled white (circle 2)))::[]
+    2 -> (move (x, y) (filled white (circle 5)))::[]
+    3 -> []
+    4 -> []
  
 main : Element
 main =
@@ -61,10 +71,14 @@ getBlockColor i =
     3 -> black
     4 -> black
 
-black: Color
+black : Color
 black =
   rgba 0 0 0 1
   
-grey: Color
+grey : Color
 grey =
   rgba 55 55 55 1
+
+white : Color
+white =
+  rgba 255 255 255 1
