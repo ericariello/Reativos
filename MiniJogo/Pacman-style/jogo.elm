@@ -76,11 +76,6 @@ getAllForms : List Graphics.Collage.Form
 getAllForms = 
     (getSquaresFromMatrix map (-27*tileSize/2) (30*tileSize/2))
  
-main : Graphics.Element.Element
-main =
-    Graphics.Element.flow Graphics.Element.outward (
-        (Graphics.Collage.collage (28*tileSize) (31*tileSize) (getAllForms++((getPacmanForm 0 0 Right)::[])))::[])
- 
 getBlockColor : Int -> Color.Color
 getBlockColor i =
     case i of
@@ -92,13 +87,15 @@ getBlockColor i =
         4 -> black
 
 black : Color.Color
-black =
-    Color.rgba 0 0 0 1
+black = Color.rgba 0 0 0 1
   
 grey : Color.Color
-grey =
-    Color.rgba 55 55 55 1
+grey = Color.rgba 55 55 55 1
 
 white : Color.Color
-white =
-    Color.rgba 255 255 255 1
+white = Color.rgba 255 255 255 1
+ 
+main : Graphics.Element.Element
+main =
+    Graphics.Element.flow Graphics.Element.outward (
+        (Graphics.Collage.collage (28*tileSize) (31*tileSize) (getAllForms++((getPacmanForm 0 0 Right)::[])))::[])
