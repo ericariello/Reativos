@@ -97,21 +97,29 @@ changeDirection : { x:Int, y:Int } -> Game -> Game
 changeDirection {x,y} game =
     { game | pacman <- (changeCharacterDirection game.pacman (getDirection {x=x, y=y} game.pacman.direction)) }
 
-findIndex : List a -> Float -> Float -> Float -> a
-findIndex (hd::tl) index curr step =
-    if curr == index then hd else (findIndex tl index (curr+step) step)
+findIndex : List a -> Float -> Float -> Float -> a -> a
+findIndex list index curr step nilVal =
+    case list of
+        [] -> nilVal
+        hd::tl -> if curr == index then hd else (findIndex tl index (curr+step) step nilVal)
 
 positionIsWall : Float -> Float -> Bool
 positionIsWall x y =
-    (findIndex (findIndex map y maximumY -1) x mininumX 1) == -1
+    (findIndex (findIndex map y maximumY -1 []) x mininumX 1 0) == -1
+
+oppositeExtreme : number -> number -> number -> number
+oppositeExtreme min max val =
+    if | val < min -> max
+       | val > max -> min
+       | otherwise -> val
 
 updatePosition : Position -> Direction -> Position
 updatePosition pos dir = 
     case dir of
-        Up    -> { pos | y <- (clamp mininumY maximumY (if (positionIsWall pos.x (pos.y+1)) then pos.y else (pos.y+1))) }
-        Down  -> { pos | y <- (clamp mininumY maximumY (if (positionIsWall pos.x (pos.y-1)) then pos.y else (pos.y-1))) }
-        Left  -> { pos | x <- (clamp mininumX maximumX (if (positionIsWall (pos.x-1) pos.y) then pos.x else (pos.x-1))) }
-        Right -> { pos | x <- (clamp mininumX maximumX (if (positionIsWall (pos.x+1) pos.y) then pos.x else (pos.x+1))) }
+        Up    -> { pos | y <- (oppositeExtreme mininumY maximumY (if (positionIsWall pos.x (pos.y+1)) then pos.y else (pos.y+1))) }
+        Down  -> { pos | y <- (oppositeExtreme mininumY maximumY (if (positionIsWall pos.x (pos.y-1)) then pos.y else (pos.y-1))) }
+        Left  -> { pos | x <- (oppositeExtreme mininumX maximumX (if (positionIsWall (pos.x-1) pos.y) then pos.x else (pos.x-1))) }
+        Right -> { pos | x <- (oppositeExtreme mininumX maximumX (if (positionIsWall (pos.x+1) pos.y) then pos.x else (pos.x+1))) }
 
 updateCharacterPosition: Character -> Time.Time -> Character
 updateCharacterPosition char dt =
