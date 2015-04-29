@@ -63,23 +63,32 @@ map = [[ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     [ -1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, -1],
     [ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]]
 
-type alias Position = 
-    { x : Float, y : Float }
+createpointsArray: List (Int) -> List (Int)
+createpointsArray lst =
+    case lst of
+        [] -> []
+        hd::tl -> (if hd==1 || hd ==2 then hd else 0)::createpointsArray tl 
 
-type alias Character = 
-    { logicPosition : Position , renderPosition : Position, direction : Direction }
+createPointsMatrix : List (List Int) -> List (List Int)
+createPointsMatrix m =
+    case m of
+        [] -> []
+        hd::tl -> (createpointsArray hd)::createPointsMatrix tl
 
-type alias Game = 
-    { pacman : Character , phantom : Character }
+type alias Position = { x : Float, y : Float }
+type alias Character = { logicPosition : Position , renderPosition : Position, direction : Direction }
+type alias Game = { pacman : Character , phantom : Character , points : List (List Int) }
 
 currentGame : Game
 currentGame = { pacman = { logicPosition = { x = mininumX, y = 1}, renderPosition = { x = 1, y = 1}, direction = Right},
-    phantom = { logicPosition = { x = 20, y = 20}, renderPosition = { x = 20, y = 20}, direction = Left}}
+    phantom = { logicPosition = { x = 20, y = 20}, renderPosition = { x = 20, y = 20}, direction = Left},
+    points = (createPointsMatrix map)}
 
 update : (Time.Time, { x:Int, y:Int }) -> Game -> Game
 update (delta, direction) game =
     changeDirection direction game
     |> updateGamePosition delta
+    |> updateGamePoints
 
 getDirection : { x:Int, y:Int } -> Direction -> Direction
 getDirection {x, y} prev = 
@@ -89,13 +98,19 @@ getDirection {x, y} prev =
         | y > 0 -> Up
         | otherwise -> prev
 
+setAccordingToWall : Float -> Float -> a -> a -> a
+setAccordingToWall x y wallVal otherVal = if (positionIsWall x y) then wallVal else otherVal
+
 changeCharacterDirection: Character -> Direction -> Character
 changeCharacterDirection char dir = 
-    { char | direction <- dir }
+    case dir of 
+        Up    -> { char | direction <- (setAccordingToWall char.logicPosition.x (char.logicPosition.y+1)) char.direction dir }
+        Down  -> { char | direction <- (setAccordingToWall char.logicPosition.x (char.logicPosition.y-1)) char.direction dir }
+        Left  -> { char | direction <- (setAccordingToWall (char.logicPosition.x-1) char.logicPosition.y) char.direction dir }
+        Right -> { char | direction <- (setAccordingToWall (char.logicPosition.x+1) char.logicPosition.y) char.direction dir }
 
 changeDirection : { x:Int, y:Int } -> Game -> Game
-changeDirection {x,y} game =
-    { game | pacman <- (changeCharacterDirection game.pacman (getDirection {x=x, y=y} game.pacman.direction)) }
+changeDirection {x,y} game = { game | pacman <- (changeCharacterDirection game.pacman (getDirection {x=x, y=y} game.pacman.direction)) }
 
 findIndex : List a -> Float -> Float -> Float -> a -> a
 findIndex list index curr step nilVal =
@@ -103,9 +118,14 @@ findIndex list index curr step nilVal =
         [] -> nilVal
         hd::tl -> if curr == index then hd else (findIndex tl index (curr+step) step nilVal)
 
+subsValArray : List a -> Float -> Float -> Float -> a -> List a
+subsValArray list index curr step val =
+    case list of
+        [] -> []
+        hd::tl -> if curr == index then val::tl else hd::(subsValArray tl index (curr+step) step val)
+
 positionIsWall : Float -> Float -> Bool
-positionIsWall x y =
-    (findIndex (findIndex map y maximumY -1 []) x mininumX 1 0) == -1
+positionIsWall x y = (findIndex (findIndex map y maximumY -1 []) x mininumX 1 0) == -1
 
 oppositeExtreme : number -> number -> number -> number
 oppositeExtreme min max val =
@@ -116,29 +136,42 @@ oppositeExtreme min max val =
 updatePosition : Position -> Direction -> Position
 updatePosition pos dir = 
     case dir of
-        Up    -> { pos | y <- (oppositeExtreme mininumY maximumY (if (positionIsWall pos.x (pos.y+1)) then pos.y else (pos.y+1))) }
-        Down  -> { pos | y <- (oppositeExtreme mininumY maximumY (if (positionIsWall pos.x (pos.y-1)) then pos.y else (pos.y-1))) }
-        Left  -> { pos | x <- (oppositeExtreme mininumX maximumX (if (positionIsWall (pos.x-1) pos.y) then pos.x else (pos.x-1))) }
-        Right -> { pos | x <- (oppositeExtreme mininumX maximumX (if (positionIsWall (pos.x+1) pos.y) then pos.x else (pos.x+1))) }
+        Up    -> { pos | y <- (oppositeExtreme mininumY maximumY (setAccordingToWall pos.x (pos.y+1) pos.y (pos.y+1))) }
+        Down  -> { pos | y <- (oppositeExtreme mininumY maximumY (setAccordingToWall pos.x (pos.y-1) pos.y (pos.y-1))) }
+        Left  -> { pos | x <- (oppositeExtreme mininumX maximumX (setAccordingToWall (pos.x-1) pos.y pos.x (pos.x-1))) }
+        Right -> { pos | x <- (oppositeExtreme mininumX maximumX (setAccordingToWall (pos.x+1) pos.y pos.x (pos.x+1))) }
 
 updateCharacterPosition: Character -> Time.Time -> Character
-updateCharacterPosition char dt =
-    { char | logicPosition <- updatePosition char.logicPosition char.direction}
+updateCharacterPosition char dt = { char | logicPosition <- updatePosition char.logicPosition char.direction}
 
 updateGamePosition : Time.Time -> Game -> Game
-updateGamePosition dt game =
-    { game | pacman <- updateCharacterPosition game.pacman dt }
+updateGamePosition dt game = { game | pacman <- updateCharacterPosition game.pacman dt }
+
+updateGamePoints: Game -> Game
+updateGamePoints game = 
+    { game | points <- subsValArray game.points game.pacman.logicPosition.y maximumY -1 (subsValArray (findIndex game.points game.pacman.logicPosition.y maximumY -1 []) game.pacman.logicPosition.x mininumX 1 0) }
 
 -- VIEW
 getCircle : Int -> Float -> Float -> List Graphics.Collage.Form
 getCircle i x y =
-    case i of
-        -1 -> []
-        0 -> []
-        1 -> (Graphics.Collage.move (x, y) (Graphics.Collage.filled white (Graphics.Collage.circle 1.5)))::[]
-        2 -> (Graphics.Collage.move (x, y) (Graphics.Collage.filled white (Graphics.Collage.circle 4)))::[]
-        3 -> []
-        4 -> []
+    if | i == 1 -> (Graphics.Collage.move (x, y) (Graphics.Collage.filled white (Graphics.Collage.circle 1.5)))::[]
+       | i == 2 -> (Graphics.Collage.move (x, y) (Graphics.Collage.filled white (Graphics.Collage.circle 4)))::[]
+       | otherwise -> []
+
+getCirclesFromArray : List Int -> Float -> Float -> List Graphics.Collage.Form
+getCirclesFromArray lst x y = 
+    case lst of 
+        [] -> []
+        hd::tl -> (getCircle hd x y) ++ (getCirclesFromArray tl (x+tileSize) y)
+
+getCirclesFromMatrix : List (List Int) -> Float -> Float -> List Graphics.Collage.Form
+getCirclesFromMatrix m x y =
+    case m of
+        [] -> []
+        hd::tl -> (getCirclesFromArray hd x y) ++ (getCirclesFromMatrix tl x (y-tileSize))
+
+getCircles : Game -> List Graphics.Collage.Form
+getCircles game = getCirclesFromMatrix game.points (mininumX*tileSize) (maximumY*tileSize)
 
 getSquaresFromArray : List Int -> Float -> Float -> List Graphics.Collage.Form 
 getSquaresFromArray xs x y = 
@@ -153,8 +186,7 @@ getSquaresFromMatrix xs x y =
         hd::tl -> (getSquaresFromArray hd x y) ++ (getSquaresFromMatrix tl x (y-tileSize))
 
 getAllForms : List Graphics.Collage.Form
-getAllForms = 
-    (getSquaresFromMatrix map (mininumX*tileSize) (maximumY*tileSize))
+getAllForms = (getSquaresFromMatrix map (mininumX*tileSize) (maximumY*tileSize))
  
 getBlockColor : Int -> Color.Color
 getBlockColor i =
@@ -190,19 +222,15 @@ pacmanImagePath dir =
 render: Game -> Graphics.Element.Element
 render game = 
   Graphics.Element.flow Graphics.Element.outward (
-      (Graphics.Collage.collage (floor (numXBlocks*tileSize)) (floor (numYBlocks*tileSize)) (getAllForms++((getPacmanForm game.pacman)::[])))::[])
+      (Graphics.Collage.collage (floor (numXBlocks*tileSize)) (floor (numYBlocks*tileSize)) (getAllForms++(getCircles game)++((getPacmanForm game.pacman)::[])))::[])
 
 -- SIGNALS
 main : Signal Graphics.Element.Element
-main =
-    Signal.map render (Signal.foldp update currentGame input)
-
+main = Signal.map render (Signal.foldp update currentGame input)
 
 input : Signal (Time.Time, { x:Int, y:Int })
-input =
-    Signal.sampleOn delta (Signal.map2 (,) delta Keyboard.arrows)
+input = Signal.sampleOn delta (Signal.map2 (,) delta Keyboard.arrows)
 
 
 delta : Signal Time.Time
-delta =
-    Signal.map (\t -> t / 20) (Time.fps 10)
+delta = Signal.map (\t -> t / 20) (Time.fps 10)
