@@ -2,6 +2,7 @@ import Color
 import Graphics.Collage 
 import Graphics.Element
 import Keyboard
+import Markdown
 import Signal
 import Time
 
@@ -77,18 +78,28 @@ createPointsMatrix m =
 
 type alias Position = { x : Float, y : Float }
 type alias Character = { logicPosition : Position , renderPosition : Position, direction : Direction }
-type alias Game = { pacman : Character , phantom : Character , points : List (List Int) }
+type alias Game = { pacman : Character , phantom : Character , points : List (List Int), won : Bool }
 
 currentGame : Game
 currentGame = { pacman = { logicPosition = { x = mininumX, y = 1}, renderPosition = { x = 1, y = 1}, direction = Right},
     phantom = { logicPosition = { x = 20, y = 20}, renderPosition = { x = 20, y = 20}, direction = Left},
-    points = (createPointsMatrix map)}
+    points = (createPointsMatrix map), won = False}
 
-update : (Time.Time, { x:Int, y:Int }) -> Game -> Game
-update (delta, direction) game =
+update : (Time.Time, { x:Int, y:Int }, Bool) -> Game -> Game
+update (delta, direction, restart) game =
+    (if not game.won then updateGame game delta direction else game)
+    |> checkRestart restart
+    
+checkRestart : Bool -> Game -> Game
+checkRestart restart game =
+    if not restart then game else currentGame
+    
+updateGame : Game -> Time.Time -> { x:Int, y:Int } -> Game
+updateGame game delta direction =
     changeDirection direction game
     |> updateGamePosition delta
     |> updateGamePoints
+    |> checkWinner
 
 getDirection : { x:Int, y:Int } -> Direction -> Direction
 getDirection {x, y} prev = 
@@ -124,6 +135,18 @@ subsValArray list index curr step val =
         [] -> []
         hd::tl -> if curr == index then val::tl else hd::(subsValArray tl index (curr+step) step val)
 
+countOccurencesArray : List a -> a -> Int
+countOccurencesArray list val =
+    case list of
+        [] -> 0
+        hd::tl -> (if hd==val then 1 else 0) + (countOccurencesArray tl val)
+        
+countOcurrencesMatrix : List (List a) -> a -> Int
+countOcurrencesMatrix m val =
+    case m of 
+        [] -> 0
+        hd::tl -> (countOccurencesArray hd val) + (countOcurrencesMatrix tl val)
+
 positionIsWall : Float -> Float -> Bool
 positionIsWall x y = (findIndex (findIndex map y maximumY -1 []) x mininumX 1 0) == -1
 
@@ -150,6 +173,10 @@ updateGamePosition dt game = { game | pacman <- updateCharacterPosition game.pac
 updateGamePoints: Game -> Game
 updateGamePoints game = 
     { game | points <- subsValArray game.points game.pacman.logicPosition.y maximumY -1 (subsValArray (findIndex game.points game.pacman.logicPosition.y maximumY -1 []) game.pacman.logicPosition.x mininumX 1 0) }
+
+checkWinner: Game -> Game
+checkWinner game =
+    { game | won <- ((countOcurrencesMatrix game.points 1)+(countOcurrencesMatrix game.points 2))==0 }
 
 -- VIEW
 getCircle : Int -> Float -> Float -> List Graphics.Collage.Form
@@ -218,18 +245,29 @@ pacmanImagePath dir =
         Down -> "./images/pacman_down.png"
         Left -> "./images/pacman_left.png"
         Right -> "./images/pacman_right.png"
+        
+getMessage: Game -> String 
+getMessage game =
+    if game.won then "You Won!"
+    else ""
+    
+getMessageElements: Game -> List Graphics.Element.Element
+getMessageElements game =
+    let msg = getMessage game in
+    if msg=="" then [] else (Markdown.toElement msg)::[]
 
 render: Game -> Graphics.Element.Element
 render game = 
-  Graphics.Element.flow Graphics.Element.outward (
-      (Graphics.Collage.collage (floor (numXBlocks*tileSize)) (floor (numYBlocks*tileSize)) (getAllForms++(getCircles game)++((getPacmanForm game.pacman)::[])))::[])
+    let gameMapFlow = Graphics.Element.flow Graphics.Element.outward (
+        (Graphics.Collage.collage (floor (numXBlocks*tileSize)) (floor (numYBlocks*tileSize)) (getAllForms++(getCircles game)++((getPacmanForm game.pacman)::[])))::[])
+    in Graphics.Element.flow Graphics.Element.down (gameMapFlow::(getMessageElements game))
 
 -- SIGNALS
 main : Signal Graphics.Element.Element
 main = Signal.map render (Signal.foldp update currentGame input)
 
-input : Signal (Time.Time, { x:Int, y:Int })
-input = Signal.sampleOn delta (Signal.map2 (,) delta Keyboard.arrows)
+input : Signal (Time.Time, { x:Int, y:Int }, Bool)
+input = Signal.sampleOn delta (Signal.map3 (,,) delta Keyboard.arrows Keyboard.shift)
 
 
 delta : Signal Time.Time
