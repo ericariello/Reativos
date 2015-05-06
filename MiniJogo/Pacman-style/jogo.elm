@@ -98,4 +98,4 @@ white = Color.rgba 255 255 255 1
 main : Graphics.Element.Element
 main =
     Graphics.Element.flow Graphics.Element.outward (
-        (Graphics.Collage.collage (28*tileSize) (31*tileSize) (getAllForms++((getPacmanForm 0 0 Right)::[])))::[])
+        (Graphics.Collage.collage (28*tileSize) (31*tileSize) (getAllForms++((getPacmanForm (-14*tileSize) (15*tileSize) Right)::[])))::[])
