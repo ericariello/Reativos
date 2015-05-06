@@ -32,7 +32,7 @@ type alias Position =
     { x : Float, y : Float }
 
 type alias Character = 
-    { logicPosition : Position , renderPosition : Position, direction : Direction, seed : Random.Seed }
+    { logicPosition : Position , renderPosition : Position, direction : Direction, seed : Random.Seed, indexSeed : Int }
 
 type alias Game = 
     { ghosts : List Character }
@@ -47,16 +47,16 @@ originalGhostList : List Character
 originalGhostList = ghost1::ghost2::ghost3::ghost4::[]
 
 ghost1 : Character
-ghost1 = { logicPosition = { x = 20, y = 20}, renderPosition = {x = 20, y = 20}, direction = Left, seed = (piSeed 1)}
+ghost1 = { logicPosition = { x = 20, y = 20}, renderPosition = {x = 20, y = 20}, direction = Left, seed = (piSeed 1), indexSeed = 1}
 
 ghost2 : Character
-ghost2 = { logicPosition = { x = -20, y = 20}, renderPosition = {x = -20, y = 20}, direction = Left, seed = (piSeed 2)}
+ghost2 = { logicPosition = { x = -20, y = 20}, renderPosition = {x = -20, y = 20}, direction = Left, seed = (piSeed 2), indexSeed = 2}
 
 ghost3 : Character
-ghost3 = { logicPosition = { x = 20, y = -20}, renderPosition = {x = 20, y = -20}, direction = Left, seed = (piSeed 3)}
+ghost3 = { logicPosition = { x = 20, y = -20}, renderPosition = {x = 20, y = -20}, direction = Left, seed = (piSeed 3), indexSeed = 3}
 
 ghost4 : Character
-ghost4 = { logicPosition = { x = -20, y = -20}, renderPosition = {x = -20, y = -20}, direction = Left, seed = (piSeed 4)}
+ghost4 = { logicPosition = { x = -20, y = -20}, renderPosition = {x = -20, y = -20}, direction = Left, seed = (piSeed 4), indexSeed = 4}
 
 minNumGhosts : Int
 minNumGhosts = 4
@@ -79,18 +79,32 @@ changeghostsDirection ghosts =
         [] -> []
         hd::tl -> changeghostDirection hd :: changeghostsDirection tl
 
+possibleDirections : Character -> List Direction
+possibleDirections char = 
+    case char.direction of
+        Up    -> Up   :: Left :: Right :: []
+        Down  -> Down :: Left :: Right :: []
+        Left  -> Up   :: Down :: Left  :: []
+        Right -> Up   :: Down :: Right :: []
+
 changeghostDirection : Character -> Character
 changeghostDirection ghost =
-    let (newDir, newSeed) = Random.generate (Random.int 1 4) ghost.seed
+    let (newDir, newSeed) = Random.generate (Random.int 1 (countElements (possibleDirections ghost))) ghost.seed
     in ghost
         |> updateghostSeed newSeed
         |> updateghostDirection newDir
+
+findIndex : List a -> Float -> Float -> Float -> a -> a
+findIndex list index curr step nilVal =
+    case list of
+        [] -> nilVal
+        hd::tl -> if curr == index then hd else (findIndex tl index (curr+step) step nilVal)
 
 updateghostSeed : Random.Seed -> Character -> Character
 updateghostSeed newSeed ghost = { ghost | seed <- newSeed}
 
 updateghostDirection : Int -> Character -> Character
-updateghostDirection newDir ghost = { ghost | direction <- decodeDir newDir}
+updateghostDirection newDir ghost = { ghost | direction <- findIndex (possibleDirections ghost) (toFloat newDir) 1 1 Up }
 
 decodeDir : Int -> Direction
 decodeDir i =
@@ -142,7 +156,11 @@ createTwinGhost : Character -> Character
 createTwinGhost ghost =
     ghost 
     |> setCharDir (oppositeDirection ghost.direction)
-    |> updateghostSeed (piSeed 5) 
+    |> updateghostindexSeed (ghost.indexSeed*2)
+    |> updateghostSeed (piSeed (ghost.indexSeed*2)) 
+
+updateghostindexSeed : Int -> Character -> Character
+updateghostindexSeed i ghost = { ghost | indexSeed <- i}
 
 setCharDir : Direction -> Character -> Character
 setCharDir dir char = { char | direction <- dir}
