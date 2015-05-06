@@ -35,46 +35,62 @@ type alias Character =
     { logicPosition : Position , renderPosition : Position, direction : Direction, seed : Random.Seed }
 
 type alias Game = 
-    { phantoms : List Character }
+    { ghosts : List Character }
 
 currentGame : Game
-currentGame = { phantoms = phantom1::[]}
+currentGame = { ghosts = originalGhostList}
 
-piSeed : Random.Seed
-piSeed = Random.initialSeed 31415
+piSeed : Int -> Random.Seed
+piSeed i = Random.initialSeed (31415*i)
 
-phantom1 : Character
-phantom1 = { logicPosition = { x = 20, y = 20}, renderPosition = {x = 20, y = 20}, direction = Left, seed = piSeed}
+originalGhostList : List Character
+originalGhostList = ghost1::ghost2::ghost3::ghost4::[]
+
+ghost1 : Character
+ghost1 = { logicPosition = { x = 20, y = 20}, renderPosition = {x = 20, y = 20}, direction = Left, seed = (piSeed 1)}
+
+ghost2 : Character
+ghost2 = { logicPosition = { x = -20, y = 20}, renderPosition = {x = -20, y = 20}, direction = Left, seed = (piSeed 2)}
+
+ghost3 : Character
+ghost3 = { logicPosition = { x = 20, y = -20}, renderPosition = {x = 20, y = -20}, direction = Left, seed = (piSeed 3)}
+
+ghost4 : Character
+ghost4 = { logicPosition = { x = -20, y = -20}, renderPosition = {x = -20, y = -20}, direction = Left, seed = (piSeed 4)}
+
+minNumGhosts : Int
+minNumGhosts = 4
 
 update : (Time.Time, { x:Int, y:Int }, Bool) -> Game -> Game
 update (delta, direction, spawn) game =
     game
-    |> changeGamePhantomsDirection
+    |> changeGameghostsDirection
     |> spawnGhosts spawn
-    |> moveGamePhantoms
-    |> removeGameCollidedPhantoms
+    |> moveGameghosts
+    |> removeGameCollidedghosts
+    |> removeGhostDeficit
 
-changeGamePhantomsDirection : Game -> Game
-changeGamePhantomsDirection game = { game | phantoms <- (changePhantomsDirection game.phantoms)}
+changeGameghostsDirection : Game -> Game
+changeGameghostsDirection game = { game | ghosts <- (changeghostsDirection game.ghosts)}
 
-changePhantomsDirection : List Character -> List Character
-changePhantomsDirection phantoms =
-    case phantoms of
+changeghostsDirection : List Character -> List Character
+changeghostsDirection ghosts =
+    case ghosts of
         [] -> []
-        hd::tl -> changePhantomDirection hd :: changePhantomsDirection tl
+        hd::tl -> changeghostDirection hd :: changeghostsDirection tl
 
-changePhantomDirection : Character -> Character
-changePhantomDirection phantom =
-    let (newDir, newSeed) = Random.generate (Random.int 1 4) phantom.seed
-    in phantom
-        |> updatePhantomSeed newSeed
-        |> updatePhantomDirection newDir
+changeghostDirection : Character -> Character
+changeghostDirection ghost =
+    let (newDir, newSeed) = Random.generate (Random.int 1 4) ghost.seed
+    in ghost
+        |> updateghostSeed newSeed
+        |> updateghostDirection newDir
 
-updatePhantomSeed : Random.Seed -> Character -> Character
-updatePhantomSeed newSeed phantom = { phantom | seed <- newSeed}
+updateghostSeed : Random.Seed -> Character -> Character
+updateghostSeed newSeed ghost = { ghost | seed <- newSeed}
 
-updatePhantomDirection : Int -> Character -> Character
-updatePhantomDirection newDir phantom = { phantom | direction <- decodeDir newDir}
+updateghostDirection : Int -> Character -> Character
+updateghostDirection newDir ghost = { ghost | direction <- decodeDir newDir}
 
 decodeDir : Int -> Direction
 decodeDir i =
@@ -84,17 +100,17 @@ decodeDir i =
         3 -> Left
         4 -> Right
 
-moveGamePhantoms : Game -> Game
-moveGamePhantoms game = {game | phantoms <- movePhantoms game.phantoms}
+moveGameghosts : Game -> Game
+moveGameghosts game = {game | ghosts <- moveghosts game.ghosts}
 
-movePhantoms : List Character -> List Character
-movePhantoms phantoms = 
-    case phantoms of
+moveghosts : List Character -> List Character
+moveghosts ghosts = 
+    case ghosts of
         [] -> []
-        hd::tl -> movePhantom hd :: movePhantoms tl
+        hd::tl -> moveghost hd :: moveghosts tl
 
-movePhantom : Character -> Character
-movePhantom phantom = updateCharacterPosition phantom 0
+moveghost : Character -> Character
+moveghost ghost = updateCharacterPosition ghost 0
 
 changeCharacterDirection: Character -> Direction -> Character
 changeCharacterDirection char dir = 
@@ -114,7 +130,7 @@ updateCharacterPosition char dt =
 
 spawnGhosts : Bool -> Game -> Game
 spawnGhosts spawn game = 
-    if spawn then { game | phantoms <- spawnNewGhosts game.phantoms } else game
+    if spawn then { game | ghosts <- spawnNewGhosts game.ghosts } else game
 
 spawnNewGhosts : List Character -> List Character
 spawnNewGhosts ghosts = 
@@ -126,7 +142,7 @@ createTwinGhost : Character -> Character
 createTwinGhost ghost =
     ghost 
     |> setCharDir (oppositeDirection ghost.direction)
-    |> updatePhantomSeed piSeed 
+    |> updateghostSeed (piSeed 5) 
 
 setCharDir : Direction -> Character -> Character
 setCharDir dir char = { char | direction <- dir}
@@ -139,14 +155,14 @@ oppositeDirection dir =
         Left  -> Right
         Right -> Left
 
-removeGameCollidedPhantoms: Game -> Game
-removeGameCollidedPhantoms game = { game | phantoms <- removeCollidedPhantoms game.phantoms}
+removeGameCollidedghosts: Game -> Game
+removeGameCollidedghosts game = { game | ghosts <- removeCollidedghosts game.ghosts}
 
-removeCollidedPhantoms : List Character -> List Character
-removeCollidedPhantoms phantoms =
-    case phantoms of
+removeCollidedghosts : List Character -> List Character
+removeCollidedghosts ghosts =
+    case ghosts of
         [] -> []
-        hd::tl -> hd::removeCollidedPhantoms(removeGhostCopies hd tl)
+        hd::tl -> hd::removeCollidedghosts(removeGhostCopies hd tl)
 
 removeGhostCopies : Character -> List Character -> List Character
 removeGhostCopies char lst =
@@ -157,6 +173,28 @@ removeGhostCopies char lst =
 samePositionGhosts : Character -> Character -> Bool
 samePositionGhosts g1 g2 =
     g1.logicPosition.x == g2.logicPosition.x && g1.logicPosition.y == g2.logicPosition.y
+
+removeGhostDeficit : Game -> Game
+removeGhostDeficit game = 
+    let deficit = 4 - (countElements game.ghosts)
+    in if deficit>0 then { game | ghosts <- addMissingGhosts game.ghosts deficit} else game
+
+countElements : List a -> Int
+countElements lst =
+    case lst of
+        [] -> 0
+        hd::tl -> 1 + countElements tl
+
+addMissingGhosts : List Character -> Int -> List Character
+addMissingGhosts ghosts i =
+    ghosts ++ (copyGhosts originalGhostList i)
+
+copyGhosts : List Character -> Int -> List Character
+copyGhosts ghosts i =
+    case ghosts of
+        [] -> []
+        hd::tl -> if i>0 then hd::(copyGhosts tl (i-1)) else []
+
 
 -- VIEW
 getGhostsForms : List Character -> List Graphics.Collage.Form
@@ -175,7 +213,7 @@ ghostImagePath = "./images/blueghost_0.gif"
 render: Game -> Graphics.Element.Element
 render game = 
   Graphics.Element.flow Graphics.Element.outward (
-      (Graphics.Collage.collage (floor (numXBlocks*tileSize)) (floor (numYBlocks*tileSize)) (getGhostsForms game.phantoms))::[])
+      (Graphics.Collage.collage (floor (numXBlocks*tileSize)) (floor (numYBlocks*tileSize)) (getGhostsForms game.ghosts))::[])
 
 -- SIGNALS
 main : Signal Graphics.Element.Element
