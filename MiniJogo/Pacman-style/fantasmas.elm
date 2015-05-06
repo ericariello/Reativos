@@ -52,6 +52,7 @@ update (delta, direction, spawn) game =
     |> changeGamePhantomsDirection
     |> spawnGhosts spawn
     |> moveGamePhantoms
+    |> removeGameCollidedPhantoms
 
 changeGamePhantomsDirection : Game -> Game
 changeGamePhantomsDirection game = { game | phantoms <- (changePhantomsDirection game.phantoms)}
@@ -137,6 +138,25 @@ oppositeDirection dir =
         Down  -> Up
         Left  -> Right
         Right -> Left
+
+removeGameCollidedPhantoms: Game -> Game
+removeGameCollidedPhantoms game = { game | phantoms <- removeCollidedPhantoms game.phantoms}
+
+removeCollidedPhantoms : List Character -> List Character
+removeCollidedPhantoms phantoms =
+    case phantoms of
+        [] -> []
+        hd::tl -> hd::removeCollidedPhantoms(removeGhostCopies hd tl)
+
+removeGhostCopies : Character -> List Character -> List Character
+removeGhostCopies char lst =
+    case lst of
+        [] -> []
+        hd::tl -> if (samePositionGhosts char hd) then removeGhostCopies char tl else hd::(removeGhostCopies char tl)
+
+samePositionGhosts : Character -> Character -> Bool
+samePositionGhosts g1 g2 =
+    g1.logicPosition.x == g2.logicPosition.x && g1.logicPosition.y == g2.logicPosition.y
 
 -- VIEW
 getGhostsForms : List Character -> List Graphics.Collage.Form
