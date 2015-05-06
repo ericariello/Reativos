@@ -2,7 +2,6 @@ import Color
 import Graphics.Collage 
 import Graphics.Element
 import Keyboard
-import Markdown
 import Signal
 import Time
 
@@ -13,6 +12,9 @@ roundDown f = toFloat (floor f)
 
 tileSize : Float
 tileSize = 15
+
+gapSize : Float
+gapSize = 0.5
 
 numXBlocks : Float
 numXBlocks = 28
@@ -81,7 +83,7 @@ type alias Character = { logicPosition : Position , renderPosition : Position, d
 type alias Game = { pacman : Character , phantom : Character , points : List (List Int), won : Bool }
 
 currentGame : Game
-currentGame = { pacman = { logicPosition = { x = mininumX, y = 1}, renderPosition = { x = 1, y = 1}, direction = Right},
+currentGame = { pacman = { logicPosition = { x = mininumX, y = 1}, renderPosition = { x = mininumX, y = 1}, direction = Right},
     phantom = { logicPosition = { x = 20, y = 20}, renderPosition = { x = 20, y = 20}, direction = Left},
     points = (createPointsMatrix map), won = False}
 
@@ -97,7 +99,8 @@ checkRestart restart game =
 updateGame : Game -> Time.Time -> { x:Int, y:Int } -> Game
 updateGame game delta direction =
     changeDirection direction game
-    |> updateGamePosition delta
+    |> updateGameLogicPosition delta
+    |> updateGameRenderPosition
     |> updateGamePoints
     |> checkWinner
 
@@ -114,11 +117,14 @@ setAccordingToWall x y wallVal otherVal = if (positionIsWall x y) then wallVal e
 
 changeCharacterDirection: Character -> Direction -> Character
 changeCharacterDirection char dir = 
-    case dir of 
-        Up    -> { char | direction <- (setAccordingToWall char.logicPosition.x (char.logicPosition.y+1)) char.direction dir }
-        Down  -> { char | direction <- (setAccordingToWall char.logicPosition.x (char.logicPosition.y-1)) char.direction dir }
-        Left  -> { char | direction <- (setAccordingToWall (char.logicPosition.x-1) char.logicPosition.y) char.direction dir }
-        Right -> { char | direction <- (setAccordingToWall (char.logicPosition.x+1) char.logicPosition.y) char.direction dir }
+    if canUpdateLogicPositionCharacter char then
+        case dir of 
+            Up    -> { char | direction <- (setAccordingToWall char.logicPosition.x (char.logicPosition.y+1)) char.direction dir }
+            Down  -> { char | direction <- (setAccordingToWall char.logicPosition.x (char.logicPosition.y-1)) char.direction dir }
+            Left  -> { char | direction <- (setAccordingToWall (char.logicPosition.x-1) char.logicPosition.y) char.direction dir }
+            Right -> { char | direction <- (setAccordingToWall (char.logicPosition.x+1) char.logicPosition.y) char.direction dir }
+    else
+        char
 
 changeDirection : { x:Int, y:Int } -> Game -> Game
 changeDirection {x,y} game = { game | pacman <- (changeCharacterDirection game.pacman (getDirection {x=x, y=y} game.pacman.direction)) }
@@ -156,19 +162,39 @@ oppositeExtreme min max val =
        | val > max -> min
        | otherwise -> val
 
-updatePosition : Position -> Direction -> Position
-updatePosition pos dir = 
+updateLogicPosition : Position -> Direction -> Position
+updateLogicPosition pos dir = 
     case dir of
         Up    -> { pos | y <- (oppositeExtreme mininumY maximumY (setAccordingToWall pos.x (pos.y+1) pos.y (pos.y+1))) }
         Down  -> { pos | y <- (oppositeExtreme mininumY maximumY (setAccordingToWall pos.x (pos.y-1) pos.y (pos.y-1))) }
         Left  -> { pos | x <- (oppositeExtreme mininumX maximumX (setAccordingToWall (pos.x-1) pos.y pos.x (pos.x-1))) }
         Right -> { pos | x <- (oppositeExtreme mininumX maximumX (setAccordingToWall (pos.x+1) pos.y pos.x (pos.x+1))) }
+        
+canUpdateRenderPositionCharacter : Character -> Bool
+canUpdateRenderPositionCharacter char = not(char.renderPosition.x == char.logicPosition.x && char.renderPosition.y==char.logicPosition.y)
 
-updateCharacterPosition: Character -> Time.Time -> Character
-updateCharacterPosition char dt = { char | logicPosition <- updatePosition char.logicPosition char.direction}
+canUpdateLogicPositionCharacter : Character -> Bool
+canUpdateLogicPositionCharacter char = char.renderPosition.x == char.logicPosition.x && char.renderPosition.y==char.logicPosition.y
 
-updateGamePosition : Time.Time -> Game -> Game
-updateGamePosition dt game = { game | pacman <- updateCharacterPosition game.pacman dt }
+updateCharacterLogicPosition: Character -> Time.Time -> Character
+updateCharacterLogicPosition char dt = { char | logicPosition <- if (canUpdateLogicPositionCharacter char) then updateLogicPosition char.logicPosition char.direction else char.logicPosition}
+
+updateGameLogicPosition : Time.Time -> Game -> Game
+updateGameLogicPosition dt game = { game | pacman <- updateCharacterLogicPosition game.pacman dt }
+
+updateRenderPosition :  Position -> Direction -> Position
+updateRenderPosition pos dir = 
+    case dir of
+        Up    -> { pos | y <- (oppositeExtreme mininumY maximumY (setAccordingToWall pos.x (pos.y+gapSize) pos.y (pos.y+gapSize))) }
+        Down  -> { pos | y <- (oppositeExtreme mininumY maximumY (setAccordingToWall pos.x (pos.y-gapSize) pos.y (pos.y-gapSize))) }
+        Left  -> { pos | x <- (oppositeExtreme mininumX maximumX (setAccordingToWall (pos.x-gapSize) pos.y pos.x (pos.x-gapSize))) }
+        Right -> { pos | x <- (oppositeExtreme mininumX maximumX (setAccordingToWall (pos.x+gapSize) pos.y pos.x (pos.x+gapSize))) }
+
+updateCaracterRenderPosition: Character -> Character
+updateCaracterRenderPosition char = { char | renderPosition <- if (canUpdateRenderPositionCharacter char) then updateRenderPosition char.renderPosition char.direction else char.renderPosition}
+
+updateGameRenderPosition : Game -> Game
+updateGameRenderPosition game = { game | pacman <- updateCaracterRenderPosition game.pacman }
 
 updateGamePoints: Game -> Game
 updateGamePoints game = 
@@ -236,7 +262,7 @@ white = Color.rgba 255 255 255 1
 
 getPacmanForm : Character -> Graphics.Collage.Form
 getPacmanForm char =
-    Graphics.Collage.move (char.logicPosition.x*tileSize, char.logicPosition.y*tileSize) (Graphics.Collage.toForm (Graphics.Element.image 15 15 (pacmanImagePath char.direction)))
+    Graphics.Collage.move (char.renderPosition.x*tileSize, char.renderPosition.y*tileSize) (Graphics.Collage.toForm (Graphics.Element.image 15 15 (pacmanImagePath char.direction)))
 
 pacmanImagePath : Direction -> String
 pacmanImagePath dir =
@@ -248,13 +274,13 @@ pacmanImagePath dir =
         
 getMessage: Game -> String 
 getMessage game =
-    if game.won then "You Won!"
+    if game.won then "You Won! Press Shift to Restart"
     else ""
     
 getMessageElements: Game -> List Graphics.Element.Element
 getMessageElements game =
     let msg = getMessage game in
-    if msg=="" then [] else (Markdown.toElement msg)::[]
+    if msg=="" then [] else (Graphics.Element.show msg)::[]
 
 render: Game -> Graphics.Element.Element
 render game = 
@@ -271,4 +297,4 @@ input = Signal.sampleOn delta (Signal.map3 (,,) delta Keyboard.arrows Keyboard.s
 
 
 delta : Signal Time.Time
-delta = Signal.map (\t -> t / 20) (Time.fps 10)
+delta = Signal.map (\t -> t / 20) (Time.fps 20)
