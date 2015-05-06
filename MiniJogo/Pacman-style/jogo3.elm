@@ -30,9 +30,6 @@ mininumY = -(numYBlocks-1)/2
 maximumY : Float
 maximumY = numYBlocks + mininumY - 1
 
-speed : Float
-speed = 0.25
-
 map: List (List Int)
 map = [[ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
     [ -1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, -1, -1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, -1],
