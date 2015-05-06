@@ -27,9 +27,6 @@ mininumY = -(numYBlocks-1)/2
 maximumY : Float
 maximumY = numYBlocks + mininumY - 1
 
-speed : Float
-speed = 0.25
-
 type alias Position = 
     { x : Float, y : Float }
 
