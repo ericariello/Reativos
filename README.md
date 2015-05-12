@@ -1,6 +1,9 @@
 # Reativos
 <br>Repositório de Sistemas Reativos (PUC)
 
+<br>Mini Jogo
+<br>  |- Pacman Style: implementação passo a passo de um jogo estilo Pacman em Elm
+<br>  |- Apresentação: apresentação feita em aula
 <br>SDL - testes com SDL (C)
 <br>Tarefa 2 - Arduíno
 <br>Tarefa 3 - Event Driven Arduíno
