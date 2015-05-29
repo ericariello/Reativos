@@ -1,0 +1,115 @@
+#include "/home/terra/TerraNet_v0.1/terra/TerraNet.defs"
+/* no 11 enviar ao 1 valor de temperatura a cada x ms */
+var ushort nodeId = getNodeId();
+var ushort pai1 = 0;
+var ushort pai2 = 0;
+var ushort myHop = 1;
+var ushort treeCounter = 0;
+pktype usrMsg from radioMsg with
+	var ushort[2] d8;
+end
+par do
+	if nodeId==11 then
+		treeCounter = 1;
+		pai1 = 1;
+		pai2 = 1;
+		myHop = 1;
+		loop do
+			var usrMsg msgRadio4;
+			msgRadio4.type = 0; // tipo geracao de arvore
+			msgRadio4.source = nodeId;
+			msgRadio4.target = BROADCAST;
+			msgRadio4.d8[0] = myHop;
+			msgRadio4.d8[1] = treeCounter;
+			treeCounter = treeCounter + 1;
+			var ushort y = qPut(msgRadio4);
+			emit REQ_CUSTOM_A(1);
+			emit LED0(3);
+			await 100s;
+		end
+	end
+with
+	// obtem temperatura e coloca mensagem na fila a cada 30s
+	var usrMsg msgRadio1;
+	await CUSTOM_A; // aguarda geracao de arvore chegar ate ele 
+	await (myHop)s;
+	loop do
+		emit REQ_TEMP();
+		msgRadio1.type = 1; // tipo informacao
+		msgRadio1.source = nodeId;
+		msgRadio1.target = pai1;
+		msgRadio1.d8[0] = await TEMP;		
+		var ushort y = qPut(msgRadio1);
+		await 5s;
+	end
+with // trata mensagens recebidas
+	var usrMsg msgRadio3;
+	loop do
+		msgRadio3 = await RECEIVE;
+		if msgRadio3.type == 1 then
+			msgRadio3.target = pai1;
+			var ushort y = qPut(msgRadio3);
+		else
+			if pai1 == 0 then
+				pai1 = msgRadio3.source;
+			else/if pai2 == 0 then
+				pai2 = msgRadio3.source;
+			end
+			if msgRadio3.d8[1] > treeCounter then
+				if nodeId!=11 then
+					treeCounter = msgRadio3.d8[1];
+					myHop = msgRadio3.d8[0]+1;
+					msgRadio3.source = nodeId;
+					msgRadio3.target = BROADCAST;
+					msgRadio3.d8[0] = myHop;
+					emit REQ_CUSTOM_A(1); // ja pode comecar a mandar informacoes 
+					var ushort y = qPut(msgRadio3);
+					emit LED0(3);
+				end
+			end
+		end
+	end
+with
+	var ushort x ;
+	var usrMsg msgRadio2;
+	var ushort size ;
+	loop do
+		await Q_READY ;
+		loop do
+			size = qSize();
+			if (size == 0) then
+				break;
+			end
+			var ushort y = qGet(msgRadio2);
+			if msgRadio2.target == BROADCAST then
+				emit SEND(msgRadio2);
+				await SEND_DONE;
+			else
+				var ushort try = 0 ;
+				loop do
+					emit SEND_ACK(msgRadio2);
+					x = await SEND_DONE_ACK ;
+					if x or try==3 then
+						break;
+					else
+						try = try + 1 ;
+					end
+				end
+				if try == 3 then
+					msgRadio2.target = pai2;
+					loop do
+						emit SEND_ACK(msgRadio2);
+						x = await SEND_DONE_ACK ;
+						if x or try==6 then
+							break;
+						else
+							try = try + 1 ;
+						end
+					end
+				end
+			end
+			var ushort time = 10/myHop;
+			await (time)ms;
+		end
+	end
+end

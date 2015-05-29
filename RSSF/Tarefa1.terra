@@ -1,0 +1,62 @@
+#include "/home/terra/TerraNet_v0.1/terra/TerraNet.defs"
+/* no 11 enviar ao 1 valor de temperatura a cada x ms */
+var ushort nodeId = getNodeId();
+var ushort pai = 1;
+pktype usrMsg from radioMsg with
+	var ushort[1] d8;
+end
+par do
+	if nodeId == 11 then
+		loop do
+			var usrMsg msgRadio1;
+			emit REQ_TEMP();
+			msgRadio1.source = nodeId;
+			msgRadio1.target = pai;
+			msgRadio1.d8[0] = await TEMP;		
+			var ushort y = qPut(msgRadio1);
+			await 1s;
+		end
+	end
+with
+	var ushort x ;
+	var usrMsg msgRadio2;
+	var ushort size ;
+	loop do
+		await Q_READY ;
+		loop do
+			size = qSize();
+			if (size == 0) then
+				break;
+			end
+			var ushort y = qGet(msgRadio2);
+			if msgRadio2.target == BROADCAST then
+				emit SEND(msgRadio2);
+				await SEND_DONE;
+			else
+				var ushort try = 0 ;
+				loop do
+					emit SEND_ACK(msgRadio2);
+					x = await SEND_DONE_ACK ;
+					if x or try==3 then
+						break;
+					else
+						try = try + 1 ;
+					end
+				end
+				if try == 3 then
+					msgRadio2.target = pai;
+					loop do
+						emit SEND_ACK(msgRadio2);
+						x = await SEND_DONE_ACK ;
+						if x or try==6 then
+							break;
+						else
+							try = try + 1 ;
+						end
+					end
+				end
+			end
+			await 50ms ;
+		end
+	end
+end
