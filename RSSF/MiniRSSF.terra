@@ -5,6 +5,7 @@ var ushort pai1 = 0;
 var ushort pai2 = 0;
 var ushort myHop = 1;
 var ushort treeCounter = 0;
+var ushort myCounter = 1;
 pktype usrMsg from radioMsg with
 	var ushort[2] d8;
 end
@@ -24,8 +25,7 @@ par do
 			treeCounter = treeCounter + 1;
 			var ushort y = qPut(msgRadio4);
 			emit REQ_CUSTOM_A(1);
-			emit LED0(3);
-			await 100s;
+			await 200s;
 		end
 	end
 with
@@ -38,24 +38,23 @@ with
 		msgRadio1.type = 1; // tipo informacao
 		msgRadio1.source = nodeId;
 		msgRadio1.target = pai1;
-		msgRadio1.d8[0] = await TEMP;		
+		msgRadio1.d8[0] = await TEMP;	
+		msgRadio1.d8[1] = myCounter;
+		myCounter = myCounter+1;
 		var ushort y = qPut(msgRadio1);
-		await 5s;
+		await 30s;
 	end
 with // trata mensagens recebidas
 	var usrMsg msgRadio3;
 	loop do
 		msgRadio3 = await RECEIVE;
-		if msgRadio3.type == 1 then
+		if msgRadio3.type == 1 then // encaminha mensagem de um filho
 			msgRadio3.target = pai1;
 			var ushort y = qPut(msgRadio3);
-		else
-			if pai1 == 0 then
+		else // roteamento
+			if msgRadio3.d8[1] > treeCounter then // nova rodada de roteamento
 				pai1 = msgRadio3.source;
-			else/if pai2 == 0 then
-				pai2 = msgRadio3.source;
-			end
-			if msgRadio3.d8[1] > treeCounter then
+				pai2 = 0;
 				if nodeId!=11 then
 					treeCounter = msgRadio3.d8[1];
 					myHop = msgRadio3.d8[0]+1;
@@ -64,8 +63,9 @@ with // trata mensagens recebidas
 					msgRadio3.d8[0] = myHop;
 					emit REQ_CUSTOM_A(1); // ja pode comecar a mandar informacoes 
 					var ushort y = qPut(msgRadio3);
-					emit LED0(3);
 				end
+			else/if pai2 == 0 then
+				pai2 = msgRadio3.source;
 			end
 		end
 	end
