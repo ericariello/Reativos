@@ -4,6 +4,11 @@
 <br>Mini Jogo
 <br>  |- Pacman Style: implementação passo a passo de um jogo estilo Pacman em Elm
 <br>  |- Apresentação: apresentação feita em aula
+<br>RSSF
+<br>  |- Tarefa 1: nó 11 envia periodicamente sua temperatura ao nó 1
+<br>  |- Tarefa 2: fila de nós que enviam suas temperaturas ao nó 1
+<br>  |- Mini RSSF: nós enviam suas temperaturas ao nó 1 usando uma árvore de roteamento, em que o roteamento 
+é realizado periodicamente.
 <br>SDL - testes com SDL (C)
 <br>Tarefa 2 - Arduíno
 <br>Tarefa 3 - Event Driven Arduíno
